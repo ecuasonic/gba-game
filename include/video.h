@@ -4,10 +4,6 @@
 #include "types.h"
 #include "memdef.h"
 
-// ---------------------------------------------------------------------------
-//                       MEM I/O
-// --------------------------------------------------------------------------
-
 #define vid_mem    ((vu16 *)MEM_VRAM)
 
 // ---------------------------------------------------------------------------
@@ -54,8 +50,8 @@ typedef TILE8 CHARBLOCK8[256];
 // Copy a tile from data to sprite-mem, tile 12.
 // tile_mem[4][12] = *(TILE *)spriteData;
 
-typedef enum { BPP4 = 4, BPP8 = 8 } BPP;
 void load_tiles4(u32 cbb, u32 starting_tile, const TILE *src, u32 bytes);
+void load_tiles8(u32 cbb, u32 starting_tile, const TILE8 *src, u32 nbytes);
 
 // =======================================================
 //			SCREENBLOCKS

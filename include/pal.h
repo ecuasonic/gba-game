@@ -7,9 +7,10 @@
 // Sprite palette: PALRAM + 0200h to PALRAM + 03FFh
 
 typedef u16 COLOR;
+typedef u32 PALBANK[8];
 
 #define BG_PAL     ((COLOR *)MEM_PAL)
-#define SPRITE_PAL ((COLOR *)MEM_PAL + 0x0200)
+#define SPRITE_PAL ((COLOR *)(MEM_PAL + 0x0200))
 
 void load_pal(u32 *dest, const u32 *src, u32 ncolors);
 #define copy_pal_sprite(src, ncolors) copy_pal(SPRITE, src, ncolors)

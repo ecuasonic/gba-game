@@ -6,7 +6,8 @@
 
 // Regular sprite attributes (128):
 typedef struct {
-        // Y Coordinate, Object mode, Gfx mode, Mosaic effect, Color mode, Sprite shape.
+        // Y Coordinate, Object mode, Gfx mode, Mosaic effect, Color mode,
+        // Sprite shape.
         u16 attr0;
         // X Coordinate, Affine index / Flipping flags, Sprite size.
         u16 attr1;
@@ -27,6 +28,7 @@ typedef struct {
         s16 pd;
 } ALIGN(4) OBJ_AFFINE;
 
+extern OBJ_ATTR oam_buffer[128];
 #define oam_mem       ((OBJ_ATTR *)MEM_OAM)
 
 // =============================================
@@ -48,9 +50,9 @@ typedef struct {
 //    (Affine) object mode.
 //    Use to hide the sprite or govern affine mode.
 //    If 00, then normal rendering.
-//    If 01, then sprite is an affine sprite, using affine matrix specified by attr1{9-D}.
-//    If 10, then disable rendering (hide the sprite).
-//    If 11, then affine sprite using double rendering area.
+//    If 01, then sprite is an affine sprite, using affine matrix specified by
+//    attr1{9-D}. If 10, then disable rendering (hide the sprite). If 11, then
+//    affine sprite using double rendering area.
 #define ATTR0_MODE_MASK   0x0300
 #define ATTR0_MODE_SHIFT  8
 #define ATTR0_MODE(n)     ((n) << 8)
@@ -80,7 +82,7 @@ typedef struct {
 //    Color mode.
 //    If 0, 16 colors (4bpp).
 //    If 1, 256 colors (8bpp).
-#define ATTR0_4BPP        ~(1 << 13)
+#define ATTR0_4BPP        0
 #define ATTR0_8BPP        (1 << 13)
 
 // Sh (14-15):
@@ -229,5 +231,33 @@ typedef struct {
 #define BF_GET2(y, name)    ((y) & name##_MASK)
 // Get value in correct bit position and set y.
 #define BF_SET2(y, x, name) (y = ((y) & ~name##_MASK) | BF_PREP2(x, name))
+
+INLINE void hide_obj_oam_buf(void)
+{
+        u32 *dest = (u32 *)oam_buffer;
+        u32  count = 128;
+        while (count--) {
+                *dest++ = ATTR0_HIDE;
+                *dest++ = 0;
+        }
+}
+
+INLINE void update_obj_oam_buf(u32 id, u16 attr0, u16 attr1, u16 attr2)
+{
+        OBJ_ATTR *dest = &oam_buffer[id];
+        dest->attr0 = attr0;
+        dest->attr1 = attr1;
+        dest->attr2 = attr2;
+}
+
+INLINE void update_oam(u32 id) { oam_mem[id] = oam_buffer[id]; }
+
+INLINE void update_entire_oam(void)
+{
+        OBJ_ATTR *dest = oam_mem;
+        OBJ_ATTR *src = oam_buffer;
+        for (u32 i = 0; i < 128; i++)
+                *dest++ = *src++;
+}
 
 #endif // OAM_H
