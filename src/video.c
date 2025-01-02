@@ -97,18 +97,3 @@ void load_tilemap(u32 sbb, const u32 *src, u32 nbytes, u32 times)
                         *dest++ = *tmp_src++;
         }
 }
-
-/**
- * @brief - Dim palette.
- *
- * @param pal - Pointer to palette.
- * @param nbytes Number of bytes in palette.
- * @param dim - How much to subtract from each current 31-bit color.
- */
-void dim_palette(u16 *pal, u32 nbytes, u32 dim)
-{
-        u32 npal = nbytes / 2;
-        while (npal--) {
-                DIM(pal++, dim);
-        }
-}

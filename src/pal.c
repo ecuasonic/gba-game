@@ -21,3 +21,18 @@ void load_pal(u32 *dest, const u32 *src, u32 nbytes)
                 // word copy for ARM block-copy instructions.
                 *dest++ = *src++;
 }
+
+/**
+ * @brief - Dim palette.
+ *
+ * @param pal - Pointer to palette.
+ * @param nbytes Number of bytes in palette.
+ * @param dim - How much to subtract from each current 31-bit color.
+ */
+void dim_palette(u16 *pal, u32 nbytes, u32 dim)
+{
+        u32 npal = nbytes / 2;
+        while (npal--) {
+                DIM(pal++, dim);
+        }
+}

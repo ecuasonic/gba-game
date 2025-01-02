@@ -4,17 +4,12 @@
 #include "types.h"
 #include "memdef.h"
 
-#define vid_mem ((vu16 *)MEM_VRAM)
-void dim_palette(u16 *pal, u32 nbytes, u32 dim);
+#define vid_mem    ((vu16 *)MEM_VRAM)
 
 // ---------------------------------------------------------------------------
 //                       VBLANK
 // ---------------------------------------------------------------------------
 #define REG_VCOUNT (*(vu16 *)(REG_BASE + 0x0006))
-
-// Use this variable to count vBlanks. Initialized in gba.c and to be
-// manipulated by waitForVBlank()
-extern u32 vcount_counter;
 
 /**
  * @brief Wait until the start of the next VBlank.
@@ -109,22 +104,5 @@ void load_tilemap(u32 sbb, const u32 *tilemap, u32 nse, u32 times);
 #define SE_PALBANK_MASK  0xF000
 #define SE_PALBANK_SHIFT 12
 #define SE_PALBANK(n)    ((n) << PALBANK_SHIFT)
-
-INLINE void DIM(u16 *x, u32 dim)
-{
-        *x &= 0x7FFF;
-        dim &= 0x1F;
-
-        u32 aligned_mask, aligned_dim;
-        for (u32 seg = 0; seg < 15; seg += 5) {
-                aligned_mask = 0x1F << seg;
-                aligned_dim = dim << seg;
-
-                if ((*x & aligned_mask) > aligned_dim)
-                        *x -= aligned_dim;
-                else
-                        *x &= ~aligned_mask;
-        }
-}
 
 #endif

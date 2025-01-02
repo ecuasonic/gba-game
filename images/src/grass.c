@@ -15,8 +15,8 @@
 //	( http://www.coranac.com/projects/#grit )
 //
 //======================================================================
-#include "types.h"
 #include "grass.h"
+#include "types.h"
 
 const u16 grassTiles[64] ALIGN(4) = {
         0x6B38, 0x7845, 0x5568, 0x5D54, 0xC328, 0x01CC, 0x991A, 0x1E21,
