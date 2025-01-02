@@ -127,36 +127,35 @@
 
 // SBB (8-12):
 //    Screen Base Block.
-//    Starting screenblock that contains tilemap of tiles for background to show.
-//    Total number of screenblocks depends on (Sz) bits.
-//    Values: 0-31.
-#define BG_SBB_MASK
-#define BG_SBB_SHIFT   8
-#define BG_SBB(n)      (n << BG_SBB_SHIFT)
+//    Starting screenblock that contains tilemap of tiles for background to
+//    show. Total number of screenblocks depends on (Sz) bits. Values: 0-31.
+#define BG_SBB_MASK      0x1F00
+#define BG_SBB_SHIFT     8
+#define BG_SBB(n)        (n << BG_SBB_SHIFT)
 
 // Wr (13):
 //    Affine Wrapping Flap.
 //    If set, affine background wrap around at their edges.
 //    Has no effect on regular backgrounds as they wrap around by default.
-#define BG_WRAP        (1 << 13)
+#define BG_WRAP          (1 << 13)
 
 // Sz (14-15):
 //    Background size and dimensions with screenblock units.
 //    Screenblock = 32x32 tiles indices.
 // Regular BG sizes:
 //    Mode 0, 1, 2.
-#define BG_SIZE_MASK   0xC000
-#define BG_SIZE_SHIFT  14
-#define BG_SIZE(n)     ((n) << BG_SIZE_SHIFT)
-#define BG_SIZE_32x32  BG_SIZE(0) // 32x32 tiles (0)
-#define BG_SIZE_64x32  BG_SIZE(1) // 64x32 tiles (0 | 1)
-#define BG_SIZE_32x64  BG_SIZE(2) // 32x64 tiles (0 / 1)
-#define BG_SIZE_64x64  BG_SIZE(3) // 64x64 tiles ((0 | 1) / (2 | 3) )
+#define BG_SIZE_MASK     0xC000
+#define BG_SIZE_SHIFT    14
+#define BG_SIZE(n)       ((n) << BG_SIZE_SHIFT)
+#define BG_SIZE_32x32    BG_SIZE(0) // 32x32 tiles (0)
+#define BG_SIZE_64x32    BG_SIZE(1) // 64x32 tiles (0 | 1)
+#define BG_SIZE_32x64    BG_SIZE(2) // 32x64 tiles (0 / 1)
+#define BG_SIZE_64x64    BG_SIZE(3) // 64x64 tiles ((0 | 1) / (2 | 3) )
 // Affine BG sizes:
 //    Modes 1, 2.
-#define BG_AFF_16x16   BG_SIZE(0) // 16x16 tiles
-#define BG_AFF_32x32   BG_SIZE(1) // 32x32 tiles
-#define BG_AFF_64x64   BG_SIZE(2) // 64x64 tiles
-#define BG_AFF_128x128 BG_SIZE(3) // 128x128 tiles
+#define BG_AFF_16x16     BG_SIZE(0) // 16x16 tiles
+#define BG_AFF_32x32     BG_SIZE(1) // 32x32 tiles
+#define BG_AFF_64x64     BG_SIZE(2) // 64x64 tiles
+#define BG_AFF_128x128   BG_SIZE(3) // 128x128 tiles
 
 #endif // REG_IO_H

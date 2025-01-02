@@ -74,7 +74,7 @@ void load_tiles8(u32 cbb, u32 starting_tile, const TILE8 *src, u32 nbytes)
  * @param src - Source tilemap, must be word aligned.
  * @param nbytes - Number of bytes to copy.
  */
-void load_tilemap(u32 sbb, const u32 *src, u32 nbytes)
+void load_tilemap(u32 sbb, const u32 *src, u32 nbytes, u32 times)
 {
         if (src == NULL)
                 return;
@@ -87,7 +87,28 @@ void load_tilemap(u32 sbb, const u32 *src, u32 nbytes)
         // multiple of 2 or 4.
         if (nbytes & 0x2)
                 nbytes += 2;
-        u32 nwords = nbytes / 4;
-        while (nwords--)
-                *dest++ = *src++;
+        u32 tmp_nwords, nwords = nbytes / 4;
+
+        const u32 *tmp_src;
+        while (times--) {
+                tmp_src = src;
+                tmp_nwords = nwords;
+                while (tmp_nwords--)
+                        *dest++ = *tmp_src++;
+        }
+}
+
+/**
+ * @brief - Dim palette.
+ *
+ * @param pal - Pointer to palette.
+ * @param nbytes Number of bytes in palette.
+ * @param dim - How much to subtract from each current 31-bit color.
+ */
+void dim_palette(u16 *pal, u32 nbytes, u32 dim)
+{
+        u32 npal = nbytes / 2;
+        while (npal--) {
+                DIM(pal++, dim);
+        }
 }

@@ -4,7 +4,8 @@
 #include "types.h"
 #include "memdef.h"
 
-#define vid_mem    ((vu16 *)MEM_VRAM)
+#define vid_mem ((vu16 *)MEM_VRAM)
+void dim_palette(u16 *pal, u32 nbytes, u32 dim);
 
 // ---------------------------------------------------------------------------
 //                       VBLANK
@@ -69,7 +70,7 @@ typedef SCR_ENTRY SCREENBLOCK[1024];
 // Screen-entry mapping: se_mem[SSB][SE] == SCR_ENTRY
 #define se_mem ((SCREENBLOCK *)MEM_VRAM)
 
-void load_tilemap(u32 sbb, const u32 *tilemap, u32 nse);
+void load_tilemap(u32 sbb, const u32 *tilemap, u32 nse, u32 times);
 
 // =======================================================
 //			SCREENBLOCK ENTRY
@@ -108,5 +109,22 @@ void load_tilemap(u32 sbb, const u32 *tilemap, u32 nse);
 #define SE_PALBANK_MASK  0xF000
 #define SE_PALBANK_SHIFT 12
 #define SE_PALBANK(n)    ((n) << PALBANK_SHIFT)
+
+INLINE void DIM(u16 *x, u32 dim)
+{
+        *x &= 0x7FFF;
+        dim &= 0x1F;
+
+        u32 aligned_mask, aligned_dim;
+        for (u32 seg = 0; seg < 15; seg += 5) {
+                aligned_mask = 0x1F << seg;
+                aligned_dim = dim << seg;
+
+                if ((*x & aligned_mask) > aligned_dim)
+                        *x -= aligned_dim;
+                else
+                        *x &= ~aligned_mask;
+        }
+}
 
 #endif

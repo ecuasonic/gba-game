@@ -7,38 +7,34 @@
 
 #include "menu_screen.h"
 #include "sprite.h"
+#include "grass.h"
 
 #define CBB0  0
 #define CBB4  4
 #define TILE0 0
 #define SBB30 30
 
+INLINE void show_menu(void);
+INLINE void show_play(void);
+
 int NORETURN main(void)
 {
-        REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ;
-        REG_BGCNT[0] = BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_SIZE_32x32;
+        REG_DISPCNT = DCNT_MODE0;
 
         // =====================================================
         //		Menu Rendering Setup
         // =====================================================
 
         // (1) Load background palette into PALRAM.
-        load_pal((u32 *)BG_PAL, (const u32 *)menu_screenPal, menu_screenPalLen);
+        load_pal((u32 *)BG_PALBANK[0],
+                 (const u32 *)menu_screenPal,
+                 menu_screenPalLen);
+        load_pal((u32 *)BG_PALBANK[1], (const u32 *)grassPal, grassPalLen);
+        dim_palette((u16 *)BG_PALBANK[1], PALBANK_LEN, 18);
 
-        // (2) Load background tiles into CBB0.
-        load_tiles4(CBB0,
-                    TILE0,
-                    (const TILE *)menu_screenTiles,
-                    menu_screenTilesLen);
-
-        // (3) Load tilemap into SBB30.
-        load_tilemap(SBB30,
-                     (const u32 *)menu_screenMetaTiles,
-                     menu_screenMetaTilesLen);
-
-        // TODO:
-        //	(1) Convert menu loading segment into function.
-        //	(2) Create function that loads play-background (32x32 tiles).
+        // (2) Show menu to screen.
+        /*show_menu();*/
+        show_play();
 
         // =====================================================
         //		Sprite Rendering Setup
@@ -48,17 +44,17 @@ int NORETURN main(void)
         hide_sprites();
 
         // (2) Load object palbank into PALRAM.
-        load_pal((u32 *)SPRITE_PAL, (const u32 *)spritePal, spritePalLen);
+        load_pal((u32 *)OBJ_PALBANK[0], (const u32 *)spritePal, spritePalLen);
 
         // (3) Load sprite0 tiles into OVRAM.
         load_tiles4(CBB4, TILE0, (const TILE *)spriteTiles, spriteTilesLen);
 
         // (4) Load sprite0 attributes into OAM.
         // This line loads sprite into menu.
-        /*oam_buf(0,*/
-        /*        ATTR0_4BPP | ATTR0_SQUARE,*/
-        /*        ATTR1_SIZE_8x8,*/
-        /*        ATTR2_ID(0) | ATTR2_PALBANK(0));*/
+        oam_buf(0,
+                ATTR0_4BPP | ATTR0_SQUARE,
+                ATTR1_SIZE_8x8,
+                ATTR2_ID(0) | ATTR2_PALBANK(0));
         vid_vsync();
         update_entire_oam();
 
@@ -105,4 +101,38 @@ int NORETURN main(void)
                 //		Eventually evolve this is pause the game.
                 //		Where you can select to restart or go to menu.
         }
+}
+
+INLINE void show_menu(void)
+{
+        // (1) Load background tiles into CBB0.
+        load_tiles4(CBB0,
+                    TILE0,
+                    (const TILE *)menu_screenTiles,
+                    menu_screenTilesLen);
+
+        // (2) Load tilemap into SBB30.
+        load_tilemap(SBB30,
+                     (const u32 *)menu_screenMetaTiles,
+                     menu_screenMetaTilesLen,
+                     1);
+
+        // (3) Set registers to show BG0.
+        BF_SET(&REG_DISPCNT, 0x01, DCNT_LAYER);
+        BF_SET(&REG_BGCNT[0], 0, BG_CBB);
+        BF_SET(&REG_BGCNT[0], 30, BG_SBB);
+}
+
+INLINE void show_play(void)
+{
+        // (1) Load background tiles into CBB0.
+        load_tiles4(CBB0, TILE0, (const TILE *)grassTiles, grassTilesLen);
+
+        // (2) Load tilemap into SBB30.
+        load_tilemap(SBB30, (const u32 *)grassMetaTiles, grassMetaTilesLen, 16);
+
+        // (3) Set registers to show BG0.
+        BF_SET(&REG_DISPCNT, 0x11, DCNT_LAYER);
+        BF_SET(&REG_BGCNT[0], 0, BG_CBB);
+        BF_SET(&REG_BGCNT[0], 30, BG_SBB);
 }
