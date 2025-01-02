@@ -3,6 +3,17 @@
 #include <stddef.h> // For NULL
 
 /**
+ * @brief - Wait until next full vblank.
+ */
+void vid_vsync(void)
+{
+        while (REG_VCOUNT >= 160)
+                ; // wait until VDraw.
+        while (REG_VCOUNT < 160)
+                ; // wait until VBlank.
+}
+
+/**
  * @brief - Copy s-tiles from src to dest at ccb, starting tile.
  * .
  * @param cbb - Charblock to store tiles.

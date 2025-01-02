@@ -1,0 +1,6 @@
+*.elf
+*.gba
+*.sav
+build
+images/images
+compile_commands.json

@@ -126,7 +126,7 @@ extern OBJ_ATTR oam_buffer[128];
 //    Horizontal/vertical flipping flags.
 //    Only if the affine flag (attr0{8}) is cleared.
 //        Otherwise part of the affine index.
-#define ATTR1_FLIP_MASK  0x0300
+#define ATTR1_FLIP_MASK  0x3000
 #define ATTR1_FLIP_SHIFT 12
 #define ATTR1_FLIP(n)    ((n) << ATTR1_FLIP_SHIFT)
 #define ATTR1_HFLIP      ATTR1_FLIP(1)
@@ -224,7 +224,7 @@ extern OBJ_ATTR oam_buffer[128];
 // Shift value down to bit 0, then return.
 #define BF_GET(y, name)     (((y) & name##_MASK) >> name##_SHIFT)
 // Place value in correct bit position and set y.
-#define BF_SET(y, x, name)  (y = ((y) & ~name##_MASK) | BF_PREP(x, name))
+#define BF_SET(y, x, name)  (*y = ((*y) & ~name##_MASK) | BF_PREP(x, name))
 
 // Get value in bit field position.
 #define BF_PREP2(x, name)   ((x) & name##_MASK)
@@ -232,7 +232,10 @@ extern OBJ_ATTR oam_buffer[128];
 // Get value in correct bit position and set y.
 #define BF_SET2(y, x, name) (y = ((y) & ~name##_MASK) | BF_PREP2(x, name))
 
-INLINE void hide_obj_oam_buf(void)
+// ==================================================================
+//			OAM_BUFFER
+// ==================================================================
+INLINE void hide_sprites(void)
 {
         u32 *dest = (u32 *)oam_buffer;
         u32  count = 128;
@@ -241,17 +244,27 @@ INLINE void hide_obj_oam_buf(void)
                 *dest++ = 0;
         }
 }
-
-INLINE void update_obj_oam_buf(u32 id, u16 attr0, u16 attr1, u16 attr2)
+INLINE void oam_buf(u32 id, u16 attr0, u16 attr1, u16 attr2)
 {
         OBJ_ATTR *dest = &oam_buffer[id];
         dest->attr0 = attr0;
         dest->attr1 = attr1;
         dest->attr2 = attr2;
 }
-
+INLINE void oam_buf_attr0(u32 id, u16 attr0) { oam_buffer[id].attr0 = attr0; }
+INLINE void oam_buf_attr1(u32 id, u16 attr1) { oam_buffer[id].attr1 = attr1; }
+INLINE void oam_buf_attr2(u32 id, u16 attr2) { oam_buffer[id].attr2 = attr2; }
+INLINE void oam_buf_coord(u32 id, s32 x, s32 y)
+{
+        u16 *attr0 = &oam_buffer[id].attr0;
+        u16 *attr1 = &oam_buffer[id].attr1;
+        BF_SET(attr0, y, ATTR0_Y);
+        BF_SET(attr1, x, ATTR1_X);
+}
+// ==================================================================
+//			OAM_MEM
+// ==================================================================
 INLINE void update_oam(u32 id) { oam_mem[id] = oam_buffer[id]; }
-
 INLINE void update_entire_oam(void)
 {
         OBJ_ATTR *dest = oam_mem;
