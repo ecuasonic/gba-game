@@ -9,19 +9,29 @@
 #include "menu_screen.h"
 #include "sprite.h"
 
-#define CBB0  0
-#define CBB4  4
-#define TILE0 0
-#define SBB30 30
+#define CBB0         0
+#define CBB4         4
+#define TILE0        0
+#define SBB30        30
+
+// 0-239
+#define SPRITE_X_MIN 100
+#define SPRITE_X_MAX 139
+#define SPRITE_X_MID ((SPRITE_X_MIN + SPRITE_X_MAX) / 2)
+// 0-159
+#define SPRITE_Y_MIN 60
+#define SPRITE_Y_MAX 99
+#define SPRITE_Y_MID ((SPRITE_Y_MIN + SPRITE_Y_MAX) / 2)
 
 INLINE void show_menu(void);
 INLINE void show_play(void);
 INLINE void init_sprites(void);
 INLINE void init_bg_pal(void);
-INLINE void move_sprite(void);
-INLINE void move_bg(u32 id);
+INLINE void motion_buf(u32 id);
+INLINE void move_sprite(s32 horz, s32 vert);
+INLINE void move_bg(u32 id, s32 horz, s32 vert);
 
-static enum STATE { MENU = 0, PAUSE, PLAY, LOSE } state = MENU;
+static enum STATE { MENU = 0, PAUSE, PLAY, LOSE } state;
 static s32 main_obj_x, main_obj_y;
 
 int NORETURN main(void)
@@ -45,7 +55,9 @@ int NORETURN main(void)
         init_sprites();
 
 restart:
-        main_obj_x = main_obj_y = 0;
+        main_obj_x = SPRITE_X_MID - 4;
+        main_obj_y = SPRITE_Y_MID - 4;
+        ((u32 *)REG_BG_OFS)[0] = 0;
         show_menu();
 
         state = MENU;
@@ -56,12 +68,16 @@ restart:
                 case MENU:
                         if (key_hit(KEY_START)) {
                                 state = PLAY;
-                                show_play();
-                                // Activate sprite.
+                                // Activate sprite and restore coordinates.
                                 oam_buf(0,
                                         ATTR0_4BPP | ATTR0_SQUARE,
                                         ATTR1_SIZE_8x8,
                                         ATTR2_ID(0) | ATTR2_PALBANK(0));
+                                oam_buf_coord(0, main_obj_x, main_obj_y);
+                                vid_vsync();
+                                update_oam(0);
+                                vid_vsync();
+                                show_play();
                         }
                         break;
                 case PAUSE:
@@ -77,21 +93,17 @@ restart:
                         //		Sprite Movement
                         // =====================================================
 
-                        // (1) Calculate controls for sprite.
-                        move_sprite();
+                        // (1) Move sprite and background based on key_poll().
+                        motion_buf(0);
 
-                        // (2) Calculate background coordinates, based on main_x
-                        // and main_y.
-                        move_bg(0);
-
-                        // (3) Vsync.
+                        // (2) Vsync before copying to important areas.
                         vid_vsync();
 
-                        // (4) Update sprite attributes for coordinates.
+                        // (3) Update sprite attributes for coordinates.
                         update_oam(0);
 
-                        // (5) Update background coordinates.
-
+                        // (4) Update background coordinates.
+                        update_bg_offset(0);
 
                         break;
                 case LOSE:
@@ -179,19 +191,45 @@ INLINE void init_sprites(void)
 }
 
 /**
+ * @brief Move sprite and/or background based on key_poll() current keys and
+ * postion of the sprite on the screen.
+ *
+ * @param id - Background to move if need be.
+ */
+INLINE void motion_buf(u32 id)
+{
+        // Read current keys from poll_keys().
+        s32 vert = key_tri_vert(), horz = key_tri_horz();
+        if ((horz == -1 && main_obj_x > SPRITE_X_MIN) ||
+            (horz == 1 && main_obj_x < SPRITE_X_MAX))
+                move_sprite(horz, 0);
+        else
+                move_bg(id, horz, 0);
+
+        if ((vert == -1 && main_obj_y > SPRITE_Y_MIN) ||
+            (vert == 1 && main_obj_y < SPRITE_Y_MAX))
+                move_sprite(0, vert);
+        else
+                move_bg(id, 0, vert);
+}
+
+/**
  * @brief Calculates next sprite position based on previous saved keys
  * (poll_keys()).
  * Places the new position into main_obj_{x,y}.
  * Stores new position into oam_buffer, not oam_mem.
  * Flips sprite horizontally depending on horizontal direction.
+ *
+ * @param horz - Sprite horizontal offset.
+ * @param vert - Sprite vertical offset.
  */
-INLINE void move_sprite(void)
+INLINE void move_sprite(s32 horz, s32 vert)
 {
-        static s32  horz;
         static u16 *main_attr1 = &oam_buffer[0].attr1;
 
-        main_obj_x += (horz = key_tri_horz());
-        main_obj_y += key_tri_vert();
+        // Only move sprite if not move_bg;
+        main_obj_x += horz;
+        main_obj_y += vert;
         oam_buf_coord(0, main_obj_x, main_obj_y);
         if (horz == 1) {
                 BF_SET(main_attr1, 0, ATTR1_FLIP);
@@ -199,14 +237,19 @@ INLINE void move_sprite(void)
                 BF_SET(main_attr1, 1, ATTR1_FLIP);
 }
 
-INLINE void move_bg(u32 id)
+/**
+ * @brief Calcuates next bg position based on previous saved keys (poll_keys()).
+ *
+ * @param id - Background to move.
+ * @param horz - BG horizontal offset.
+ * @param vert - BG vertical offset.
+ */
+INLINE void move_bg(u32 id, s32 horz, s32 vert)
 {
         // This is for data processing.
         // Write into bg register buffer for particular background.
         // Then create another function that copies buffer to background.
-        //
-        // TODO:
-        // (1) Get sprite coordinates through main_obj_{x,y}.
-        // (2) If either coordinates is within 2 tiles from bg border, then move
-        // background.
+
+        bg_offset_buf[id].x += horz;
+        bg_offset_buf[id].y += vert;
 }

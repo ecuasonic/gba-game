@@ -3,8 +3,22 @@
 
 #include "types.h"
 #include "memdef.h"
+#include "memreg.h"
 
-#define vid_mem    ((vu16 *)MEM_VRAM)
+#define vid_mem ((vu16 *)MEM_VRAM)
+
+/**
+ * @brief Buffer for BG offset register.
+ * Used for processing, then copying into actual buffer (update_bg_offset()).
+ */
+extern BG_POINT bg_offset_buf[4];
+
+/**
+ * @brief Copy BG offset register buffer into actual register.
+ *
+ * @param id Background to update BG offset register.
+ */
+INLINE void update_bg_offset(u32 id) { REG_BG_OFS[id] = bg_offset_buf[id]; }
 
 // ---------------------------------------------------------------------------
 //                       VBLANK

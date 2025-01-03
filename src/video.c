@@ -1,6 +1,13 @@
 #include "video.h"
 #include "types.h"
+#include "memreg.h"
 #include <stddef.h> // For NULL
+
+/**
+ * @brief Buffer for BG offset register.
+ * Used for processing, then copying into actual buffer.
+ */
+BG_POINT bg_offset_buf[4];
 
 /**
  * @brief - Wait until next full vblank.

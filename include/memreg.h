@@ -158,4 +158,17 @@
 #define BG_AFF_64x64     BG_SIZE(2) // 64x64 tiles
 #define BG_AFF_128x128   BG_SIZE(3) // 128x128 tiles
 
+// ---------------------------------------------------------------------------
+//				REG_BG_OFS
+// ---------------------------------------------------------------------------
+
+// Write-Only!
+// Regular map offsets.
+typedef struct BG_POINT {
+        s16 x, y;
+} ALIGN(4) BG_POINT;
+
+// BG offset array: REG_BG_OFS[n].x/.y is REG_BGnHOFS / REG_BGnVOFS
+#define REG_BG_OFS ((BG_POINT *)(REG_BASE + 0x0010))
+
 #endif // REG_IO_H
