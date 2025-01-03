@@ -8,11 +8,11 @@
 #include "grass.h"
 #include "menu_screen.h"
 #include "sprite.h"
+#include "berries.h"
 
-#define CBB0         0
-#define CBB4         4
-#define TILE0        0
-#define SBB30        30
+#define CBB(n)       (n)
+#define SBB(n)       (n)
+#define TILE(n)      (n)
 
 // 0-239
 #define SPRITE_X_MIN 100
@@ -36,7 +36,7 @@ static s32 main_obj_x, main_obj_y;
 
 int NORETURN main(void)
 {
-        REG_DISPCNT = DCNT_MODE0;
+        REG_DISPCNT = DCNT_MODE0 | DCNT_OBJ_1D;
 
         // =====================================================
         //		Menu Rendering Setup
@@ -68,14 +68,23 @@ restart:
                 case MENU:
                         if (key_hit(KEY_START)) {
                                 state = PLAY;
-                                // Activate sprite and restore coordinates.
+                                // Activate main sprite and restore coordinates.
                                 oam_buf(0,
                                         ATTR0_4BPP | ATTR0_SQUARE,
                                         ATTR1_SIZE_8x8,
                                         ATTR2_ID(0) | ATTR2_PALBANK(0));
                                 oam_buf_coord(0, main_obj_x, main_obj_y);
+
+                                // Activate berry and restore coordinates.
+                                oam_buf(1,
+                                        ATTR0_4BPP | ATTR0_SQUARE,
+                                        ATTR1_SIZE_16x16 | ATTR1_VFLIP,
+                                        ATTR2_ID(1) | ATTR2_PALBANK(1));
+                                oam_buf_coord(1, main_obj_x, main_obj_y);
+
                                 vid_vsync();
                                 update_oam(0);
+                                update_oam(1);
                                 vid_vsync();
                                 show_play();
                         }
@@ -96,7 +105,7 @@ restart:
                         // (1) Move sprite and background based on key_poll().
                         motion_buf(0);
 
-                        // (2) Vsync before copying to important areas.
+                        // (2) Vsync before copying into important areas.
                         vid_vsync();
 
                         // (3) Update sprite attributes for coordinates.
@@ -120,13 +129,13 @@ restart:
 INLINE void show_menu(void)
 {
         // (1) Load background tiles into CBB0.
-        load_tiles4(CBB0,
-                    TILE0,
+        load_tiles4(CBB(0),
+                    TILE(0),
                     (const TILE *)menu_screenTiles,
                     menu_screenTilesLen);
 
         // (2) Load tilemap into SBB30.
-        load_tilemap(SBB30,
+        load_tilemap(SBB(30),
                      (const u32 *)menu_screenMetaTiles,
                      menu_screenMetaTilesLen,
                      1);
@@ -143,10 +152,11 @@ INLINE void show_menu(void)
 INLINE void show_play(void)
 {
         // (1) Load background tiles into CBB0.
-        load_tiles4(CBB0, TILE0, (const TILE *)grassTiles, grassTilesLen);
+        load_tiles4(CBB(0), TILE(0), (const TILE *)grassTiles, grassTilesLen);
 
         // (2) Load tilemap into SBB30.
-        load_tilemap(SBB30, (const u32 *)grassMetaTiles, grassMetaTilesLen, 16);
+        load_tilemap(
+                SBB(30), (const u32 *)grassMetaTiles, grassMetaTilesLen, 16);
 
         // (3) Set registers to show BG0.
         BF_SET(&REG_DISPCNT, 0x11, DCNT_LAYER);
@@ -174,16 +184,18 @@ INLINE void init_sprites(void)
 {
         // TODO:
         //	(1) Create berry and thorn sprites.
-        //	(2) If main sprite is not loaded, then don't move it.
 
         // (1) Blank all sprites (they are active on startup).
         hide_sprites();
 
         // (2) Load object palbank into PALRAM.
         load_pal((u32 *)OBJ_PALBANK[0], (const u32 *)spritePal, spritePalLen);
+        load_pal((u32 *)OBJ_PALBANK[1], (const u32 *)berriesPal, berriesPalLen);
 
         // (3) Load sprite0 tiles into OVRAM.
-        load_tiles4(CBB4, TILE0, (const TILE *)spriteTiles, spriteTilesLen);
+        load_tiles4(CBB(4), TILE(0), (const TILE *)spriteTiles, spriteTilesLen);
+        load_tiles4(
+                CBB(4), TILE(1), (const TILE *)berriesTiles, berriesTilesLen);
 
         // (4) Update the oam.
         vid_vsync();
