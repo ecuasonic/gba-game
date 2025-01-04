@@ -222,7 +222,7 @@ extern OBJ_ATTR oam_buffer[128];
 // Place value into correct bit field position.
 #define BF_PREP(x, name)    (((x) << name##_SHIFT) & name##_MASK)
 // Shift value down to bit 0, then return.
-#define BF_GET(y, name)     (((y) & name##_MASK) >> name##_SHIFT)
+#define BF_GET(y, name)     (((*y) & name##_MASK) >> name##_SHIFT)
 // Place value in correct bit position and set y.
 #define BF_SET(y, x, name)  (*y = ((*y) & ~name##_MASK) | BF_PREP(x, name))
 

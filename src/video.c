@@ -6,6 +6,7 @@
 /**
  * @brief Buffer for BG offset register.
  * Used for processing, then copying into actual buffer.
+ * Actual register is write-only.
  */
 BG_POINT bg_offset_buf[4];
 

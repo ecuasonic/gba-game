@@ -10,30 +10,55 @@
 #include "sprite.h"
 #include "berries.h"
 
-#define CBB(n)       (n)
-#define SBB(n)       (n)
-#define TILE(n)      (n)
+#define CBB(n)        (n)
+#define SBB(n)        (n)
+#define TILE(n)       (n)
+
+#define OBJ(n)        (n)
+#define BG(n)         (n)
+
+#define SCREEN_WIDTH  240
+#define SCREEN_HEIGHT 160
 
 // 0-239
-#define SPRITE_X_MIN 100
-#define SPRITE_X_MAX 139
-#define SPRITE_X_MID ((SPRITE_X_MIN + SPRITE_X_MAX) / 2)
+#define SPRITE_X_MIN  100
+#define SPRITE_X_MAX  139
+#define SPRITE_X_MID  ((SPRITE_X_MIN + SPRITE_X_MAX) / 2)
 // 0-159
-#define SPRITE_Y_MIN 60
-#define SPRITE_Y_MAX 99
-#define SPRITE_Y_MID ((SPRITE_Y_MIN + SPRITE_Y_MAX) / 2)
+#define SPRITE_Y_MIN  60
+#define SPRITE_Y_MAX  99
+#define SPRITE_Y_MID  ((SPRITE_Y_MIN + SPRITE_Y_MAX) / 2)
 
 INLINE void show_menu(void);
 INLINE void show_play(void);
 INLINE void init_sprites(void);
 INLINE void init_bg_pal(void);
-INLINE void motion_buf(u32 id);
+INLINE void main_sprite_motion_buf(u32 id);
 INLINE void move_sprite(s32 horz, s32 vert);
 INLINE void move_bg(u32 id, s32 horz, s32 vert);
+INLINE void move_elements(void);
+
+typedef struct {
+        u32 x;
+        u32 y;
+} POINT;
+typedef struct {
+        const POINT bg_coord;
+        OBJ_ATTR   *attr;
+        /*u32 active;*/
+} SPRITE;
+typedef struct {
+        SPRITE *berries;
+        SPRITE *thorns;
+        u32     b_len;
+        u32     t_len;
+} ELEMENTS;
+INLINE void move_element(SPRITE *sprite);
+
+static ELEMENTS elements;
 
 static enum STATE { MENU = 0, PAUSE, PLAY, LOSE } state;
-static s32 main_obj_x, main_obj_y;
-
+static s32   main_obj_x, main_obj_y;
 int NORETURN main(void)
 {
         REG_DISPCNT = DCNT_MODE0 | DCNT_OBJ_1D;
@@ -53,6 +78,10 @@ int NORETURN main(void)
         // =====================================================
 
         init_sprites();
+        SPRITE berry = {
+                .bg_coord = { 60, 60 },
+                  .attr = &oam_buffer[OBJ(1)]
+        };
 
 restart:
         main_obj_x = SPRITE_X_MID - 4;
@@ -69,23 +98,28 @@ restart:
                         if (key_hit(KEY_START)) {
                                 state = PLAY;
                                 // Activate main sprite and restore coordinates.
-                                oam_buf(0,
+                                oam_buf(OBJ(0),
                                         ATTR0_4BPP | ATTR0_SQUARE,
                                         ATTR1_SIZE_8x8,
                                         ATTR2_ID(0) | ATTR2_PALBANK(0));
-                                oam_buf_coord(0, main_obj_x, main_obj_y);
+                                oam_buf_coord(OBJ(0), main_obj_x, main_obj_y);
+                                vid_vsync();
+                                update_oam(OBJ(0));
 
                                 // Activate berry and restore coordinates.
-                                oam_buf(1,
+                                // TODO: Render berries all at once, in
+                                // designated areas based on berry sprite
+                                // attributes and background/screen coordinates.
+                                oam_buf(OBJ(1),
                                         ATTR0_4BPP | ATTR0_SQUARE,
                                         ATTR1_SIZE_16x16 | ATTR1_VFLIP,
                                         ATTR2_ID(1) | ATTR2_PALBANK(1));
-                                oam_buf_coord(1, main_obj_x, main_obj_y);
-
+                                oam_buf_coord(OBJ(1), main_obj_x, main_obj_y);
+                                // TODO: Copy all berry sprites to oam.
+                                // Maybe change update_oam() functionality to
+                                // take a range.
                                 vid_vsync();
-                                update_oam(0);
-                                update_oam(1);
-                                vid_vsync();
+                                update_oam(OBJ(1));
                                 show_play();
                         }
                         break;
@@ -103,16 +137,23 @@ restart:
                         // =====================================================
 
                         // (1) Move sprite and background based on key_poll().
-                        motion_buf(0);
+                        main_sprite_motion_buf(BG(0));
+
+                        // TODO: Create function that checks for each berry
+                        // sprite and see whether to unhide/hide and whether to
+                        // change the berry coordinates when the background
+                        // coordinates change.
+                        move_element(&berry);
 
                         // (2) Vsync before copying into important areas.
                         vid_vsync();
 
                         // (3) Update sprite attributes for coordinates.
-                        update_oam(0);
+                        update_oam(OBJ(0));
+                        update_oam(OBJ(1));
 
                         // (4) Update background coordinates.
-                        update_bg_offset(0);
+                        update_bg_offset(BG(0));
 
                         break;
                 case LOSE:
@@ -183,7 +224,7 @@ INLINE void init_bg_pal(void)
 INLINE void init_sprites(void)
 {
         // TODO:
-        //	(1) Create berry and thorn sprites.
+        //	(1) Create thorn sprites.
 
         // (1) Blank all sprites (they are active on startup).
         hide_sprites();
@@ -208,7 +249,7 @@ INLINE void init_sprites(void)
  *
  * @param id - Background to move if need be.
  */
-INLINE void motion_buf(u32 id)
+INLINE void main_sprite_motion_buf(u32 id)
 {
         // Read current keys from poll_keys().
         s32 vert = key_tri_vert(), horz = key_tri_horz();
@@ -264,4 +305,52 @@ INLINE void move_bg(u32 id, s32 horz, s32 vert)
 
         bg_offset_buf[id].x += horz;
         bg_offset_buf[id].y += vert;
+}
+
+/**
+ * @brief - Move element if in screen. Hide and don't move if not.
+ *
+ * @param sprite - Pointer to sprite struct.
+ */
+INLINE void move_element(SPRITE *sprite)
+{
+        // TODO:
+        // (1) Get bg coordinates.
+        BG_POINT bg = bg_offset_buf[0];
+        // (2) Get sprite bg coordinates.
+        s16 xsb = (s16)(sprite->bg_coord.x);
+        s16 ysb = (s16)(sprite->bg_coord.y);
+        // (3) Get sprite size.
+        s16 size = 16;
+
+        // (4) Perform comparision. If sprite is in screen, then unhide and
+        // update screen coordinates.
+        // TODO: Consider the case where the screen (xb, yb) = (0, 0) goes up
+        // and left.
+        OBJ_ATTR *attr = sprite->attr; // pointer to buffer
+        u32       hidden = BF_GET(&attr->attr0, ATTR0_MODE);
+        if (((xsb + size >= bg.x) || (xsb <= bg.x + SCREEN_WIDTH)) &&
+            ((ysb + size >= bg.y) || (ysb <= bg.y + SCREEN_HEIGHT))) {
+                // here we need to update the coordinate of the sprite.
+                BF_SET(&attr->attr0, ysb - bg.y, ATTR0_Y);
+                BF_SET(&attr->attr1, xsb - bg.x, ATTR1_X);
+                if (hidden) {
+                        BF_SET(&attr->attr0, 2, ATTR0_MODE);
+                }
+        } else if (!hidden) {
+                BF_SET(&attr->attr0, 0, ATTR0_MODE);
+        }
+}
+
+// Has to move everything that is not the main sprite, including berries and
+// thorns. Should the every other sprite be put in a struct that contains
+// berries and thorn arrays?
+INLINE void move_elements(void)
+{
+        for (u32 i = 0; i < elements.b_len; i++) {
+                move_element(&elements.berries[i]);
+        }
+        for (u32 i = 0; i < elements.t_len; i++) {
+                move_element(&elements.thorns[i]);
+        }
 }

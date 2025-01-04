@@ -162,7 +162,6 @@
 //				REG_BG_OFS
 // ---------------------------------------------------------------------------
 
-// Write-Only!
 // Regular map offsets.
 typedef struct BG_POINT {
         s16 x, y;
