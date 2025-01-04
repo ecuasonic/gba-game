@@ -34,13 +34,11 @@ INLINE void show_play(void);
 INLINE void init_sprites(void);
 INLINE void init_bg_pal(void);
 INLINE void main_sprite_motion_buf(u32 id);
-INLINE void move_sprite(s32 horz, s32 vert);
-INLINE void move_bg(u32 id, s32 horz, s32 vert);
 INLINE void move_elements(void);
 
 typedef struct {
-        u32 x;
-        u32 y;
+        s16 x;
+        s16 y;
 } POINT;
 typedef struct {
         const POINT bg_coord;
@@ -79,14 +77,16 @@ int NORETURN main(void)
 
         init_sprites();
         SPRITE berry = {
-                .bg_coord = { 60, 60 },
+                .bg_coord = { 0, 0 },
                   .attr = &oam_buffer[OBJ(1)]
         };
 
 restart:
         main_obj_x = SPRITE_X_MID - 4;
         main_obj_y = SPRITE_Y_MID - 4;
-        ((u32 *)REG_BG_OFS)[0] = 0;
+        bg_offset_buf[BG(0)].x = 0;
+        bg_offset_buf[BG(0)].y = 0;
+        update_bg_offset(BG(0));
         show_menu();
 
         state = MENU;
@@ -114,7 +114,6 @@ restart:
                                         ATTR0_4BPP | ATTR0_SQUARE,
                                         ATTR1_SIZE_16x16 | ATTR1_VFLIP,
                                         ATTR2_ID(1) | ATTR2_PALBANK(1));
-                                oam_buf_coord(OBJ(1), main_obj_x, main_obj_y);
                                 // TODO: Copy all berry sprites to oam.
                                 // Maybe change update_oam() functionality to
                                 // take a range.
@@ -243,6 +242,8 @@ INLINE void init_sprites(void)
         update_entire_oam();
 }
 
+INLINE void move_sprite(s32 horz, s32 vert);
+INLINE void move_bg(u32 id, s32 horz, s32 vert);
 /**
  * @brief Move sprite and/or background based on key_poll() current keys and
  * postion of the sprite on the screen.
@@ -317,6 +318,7 @@ INLINE void move_element(SPRITE *sprite)
         // TODO:
         // (1) Get bg coordinates.
         BG_POINT bg = bg_offset_buf[0];
+        bg.x &= 0x01FF;
         // (2) Get sprite bg coordinates.
         s16 xsb = (s16)(sprite->bg_coord.x);
         s16 ysb = (s16)(sprite->bg_coord.y);
@@ -327,6 +329,8 @@ INLINE void move_element(SPRITE *sprite)
         // update screen coordinates.
         // TODO: Consider the case where the screen (xb, yb) = (0, 0) goes up
         // and left.
+        // It seems as though the sprite shows up again after 34 tiles
+        // horizontally.
         OBJ_ATTR *attr = sprite->attr; // pointer to buffer
         u32       hidden = BF_GET(&attr->attr0, ATTR0_MODE);
         if (((xsb + size >= bg.x) || (xsb <= bg.x + SCREEN_WIDTH)) &&
