@@ -48,8 +48,8 @@ typedef struct {
 typedef struct {
         SPRITE *berries;
         SPRITE *thorns;
-        u32     b_len;
-        u32     t_len;
+        u16     b_len;
+        u16     t_len;
 } ELEMENTS;
 INLINE void move_element(SPRITE *sprite);
 
@@ -303,58 +303,86 @@ INLINE void move_bg(u32 id, s32 horz, s32 vert)
         // This is for data processing.
         // Write into bg register buffer for particular background.
         // Then create another function that copies buffer to background.
+        // s9.
 
         bg_offset_buf[id].x += horz;
         bg_offset_buf[id].y += vert;
 }
 
+INLINE s16 s16_to_u8(s16 x)
+{
+        if (x < 0) {
+                return (0x100 - (-x & 0xFF)) & 0xFF;
+        } else {
+                return x & 0xFF;
+        }
+}
+
+#define u8(n)         ((n) & 0xFF)
+#define wrapped_bg(n) ((n) - 256)
 /**
- * @brief - Move element if in screen. Hide and don't move if not.
+ * @brief - Move element if in screen.
+ * Accounts for background is wrapped.
+ * Handles only 32x32 tiled bgs for now.
  *
  * @param sprite - Pointer to sprite struct.
  */
 INLINE void move_element(SPRITE *sprite)
 {
         // TODO:
-        // (1) Get bg coordinates.
-        BG_POINT bg = bg_offset_buf[0];
-        bg.x &= 0x01FF;
-        // (2) Get sprite bg coordinates.
-        s16 xsb = (s16)(sprite->bg_coord.x);
-        s16 ysb = (s16)(sprite->bg_coord.y);
-        // (3) Get sprite size.
-        s16 size = 16;
+        // (1) Get sprite bg coordinates.
+        const s16 xsb = sprite->bg_coord.x;
+        const s16 ysb = sprite->bg_coord.y;
 
-        // (4) Perform comparision. If sprite is in screen, then unhide and
-        // update screen coordinates.
-        // TODO: Consider the case where the screen (xb, yb) = (0, 0) goes up
-        // and left.
-        // It seems as though the sprite shows up again after 34 tiles
-        // horizontally.
-        OBJ_ATTR *attr = sprite->attr; // pointer to buffer
-        u32       hidden = BF_GET(&attr->attr0, ATTR0_MODE);
-        if (((xsb + size >= bg.x) || (xsb <= bg.x + SCREEN_WIDTH)) &&
-            ((ysb + size >= bg.y) || (ysb <= bg.y + SCREEN_HEIGHT))) {
-                // here we need to update the coordinate of the sprite.
-                BF_SET(&attr->attr0, ysb - bg.y, ATTR0_Y);
-                BF_SET(&attr->attr1, xsb - bg.x, ATTR1_X);
-                if (hidden) {
-                        BF_SET(&attr->attr0, 2, ATTR0_MODE);
+        // (2) Get bg coordinates.
+        BG_POINT sc = bg_offset_buf[BG(0)];
+        BG_POINT u8_sc = {
+                .x = s16_to_u8(sc.x),
+                .y = s16_to_u8(sc.y),
+        };
+
+        // (3) Get sprite size.
+        u16 size = 16;
+
+        // (4) If sprite on screen, update screen coordinates.
+        // Point to attr buffer.
+        OBJ_ATTR *attr = sprite->attr;
+
+        // x-coord
+        // (Case 1): Right sprite side is ahead of left unwrapped screen side.
+        if (u8(xsb + size) >= u8_sc.x) {
+                // Left sprite side is behind of right unwrapped screen side.
+                if (xsb <= u8_sc.x + SCREEN_WIDTH) {
+                        BF_SET(&attr->attr1, xsb - u8_sc.x, ATTR1_X);
                 }
-        } else if (!hidden) {
-                BF_SET(&attr->attr0, 0, ATTR0_MODE);
+                // (Case 2): Right sprite side is behind of left wrapped bg side
+                // AND left sprite side is ahead of right wrapped bg side.
+        } else if (xsb <= wrapped_bg(u8_sc.x) + SCREEN_WIDTH) {
+                BF_SET(&attr->attr1, xsb - wrapped_bg(u8_sc.x), ATTR1_X);
+        }
+
+        // y-coord
+        // (Case 1): Bottom sprite side is below top unwrapped bg side.
+        if (u8(ysb + size) >= u8_sc.y) {
+                // Top sprite side is above bottom unwrapped bg side.
+                if (ysb <= u8_sc.y + SCREEN_HEIGHT) {
+                        BF_SET(&attr->attr0, ysb - u8_sc.y, ATTR0_Y);
+                }
+                // (Case 2): Bottom sprite side is above top wrapped bg side
+                // AND top sprite side is above bottom wrapped bg side.
+        } else if (ysb <= wrapped_bg(u8_sc.y) + SCREEN_HEIGHT) {
+                BF_SET(&attr->attr0, ysb - wrapped_bg(u8_sc.y), ATTR0_Y);
         }
 }
 
-// Has to move everything that is not the main sprite, including berries and
-// thorns. Should the every other sprite be put in a struct that contains
-// berries and thorn arrays?
+// Has to move everything that is not the main sprite, including berries
+// and thorns. Should the every other sprite be put in a struct that
+// contains berries and thorn arrays?
 INLINE void move_elements(void)
 {
-        for (u32 i = 0; i < elements.b_len; i++) {
+        for (u32 i = 0; i < elements.b_len; i++)
                 move_element(&elements.berries[i]);
-        }
-        for (u32 i = 0; i < elements.t_len; i++) {
+
+        for (u32 i = 0; i < elements.t_len; i++)
                 move_element(&elements.thorns[i]);
-        }
 }
