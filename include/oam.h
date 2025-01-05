@@ -29,7 +29,7 @@ typedef struct {
 } ALIGN(4) OBJ_AFFINE;
 
 extern OBJ_ATTR oam_buffer[128];
-#define oam_mem       ((OBJ_ATTR *)MEM_OAM)
+#define oam_mem           ((OBJ_ATTR *)MEM_OAM)
 
 // =============================================
 //		Attribute 0
@@ -40,11 +40,9 @@ extern OBJ_ATTR oam_buffer[128];
 //    Marks the top of the sprite.
 //    Up to 255 pixels.
 //    0 - 255 pixels or 0-31 tiles.
-#define ATTR0_Y_MASK  0x00FF
-#define ATTR0_Y_SHIFT 0
-#define ATTR0_Y(n)                                                  \
-        ((n & 0x00FF) << ATTR0_Y_SHIFT) &                           \
-                ATTR0_Y_MASK // n can accidentally set other values
+#define ATTR0_Y_MASK      0x00FF
+#define ATTR0_Y_SHIFT     0
+#define ATTR0_Y(n)        ((n) & ATTR0_Y_MASK) // n can accidentally set other values
 
 // OM (8-9):
 //    (Affine) object mode.
@@ -109,10 +107,9 @@ extern OBJ_ATTR oam_buffer[128];
 // X (0-8):
 //    X coordinate of sprite on screen.
 //    Marks left of the sprite.
-#define ATTR1_X_MASK  0x01FF
-#define ATTR1_X_SHIFT 0
-#define ATTR1_X(n)                                                            \
-        ((n & 0x01FF) << ATTR1_X_SHIFT) // n can accidentally set other bits.
+#define ATTR1_X_MASK     0x01FF
+#define ATTR1_X_SHIFT    0
+#define ATTR1_X(n)       ((n) & ATTR1_X_MASK) // n can accidentally set other bits.
 
 // AID (9-13):
 //    Affine index.
