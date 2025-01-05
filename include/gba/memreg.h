@@ -1,7 +1,7 @@
 #ifndef REG_IO_H
 #define REG_IO_H
-#include "types.h"
-#include "memdef.h"
+#include "gba/types.h"
+#include "gba/memdef.h"
 
 // ---------------------------------------------------------------------------
 //                       REG_DISPCNT

@@ -1,7 +1,7 @@
 #ifndef PAL_H
 #define PAL_H
 
-#include "types.h"
+#include "gba/types.h"
 
 // Background palette: PALRAM to PALARM + 01FFh
 // Sprite palette: PALRAM + 0200h to PALRAM + 03FFh

@@ -1,6 +1,6 @@
-#include "video.h"
-#include "types.h"
-#include "memreg.h"
+#include "gba/video.h"
+#include "gba/types.h"
+#include "gba/memreg.h"
 #include <stddef.h> // For NULL
 
 /**

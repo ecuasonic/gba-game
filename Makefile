@@ -23,8 +23,8 @@ include $(DEVKITARM)/gba_rules
 #---------------------------------------------------------------------------------
 TARGET		:= berry_eating_simulator
 BUILD		:= build
-SOURCES		:= ./src ./images/src
-INCLUDES	:= ./include ./images/include
+SOURCES		:= src images/src src/gba
+INCLUDES	:= ./include ./images/include ./include/gba
 DATA		:=
 MUSIC		:=
 

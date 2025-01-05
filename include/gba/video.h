@@ -1,9 +1,9 @@
 #ifndef VIDEO_H
 #define VIDEO_H
 
-#include "types.h"
-#include "memdef.h"
-#include "memreg.h"
+#include "gba/types.h"
+#include "gba/memdef.h"
+#include "gba/memreg.h"
 
 #define vid_mem ((vu16 *)MEM_VRAM)
 

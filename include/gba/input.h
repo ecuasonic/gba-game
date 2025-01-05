@@ -1,7 +1,7 @@
 #ifndef INPUT_H
 #define INPUT_H
-#include "types.h"
-#include "memdef.h"
+#include "gba/types.h"
+#include "gba/memdef.h"
 
 // ---------------------------------------------------------------------------
 //                       BUTTON INPUT

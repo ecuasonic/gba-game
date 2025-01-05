@@ -1,5 +1,7 @@
-#include "types.h"
-#include "oam.h"
+#ifndef UTILS_H
+#define UTILS_H
+#include "gba/types.h"
+#include "gba/oam.h"
 
 #define CBB(n)        (n)
 #define SBB(n)        (n)
@@ -39,3 +41,4 @@ typedef struct {
         POINT pt;
         u32   chosen;
 } TABLE_ELEMENT;
+#endif // UTILS_H

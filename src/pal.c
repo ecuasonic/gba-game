@@ -1,5 +1,5 @@
-#include "pal.h"
-#include "types.h"
+#include "gba/pal.h"
+#include "gba/types.h"
 #include <stddef.h> // For NULL
 
 /**

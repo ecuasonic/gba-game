@@ -1,8 +1,8 @@
 #ifndef OAM_H
 #define OAM_H
 
-#include "types.h"
-#include "memdef.h"
+#include "gba/types.h"
+#include "gba/memdef.h"
 
 // Regular sprite attributes (128):
 typedef struct {
