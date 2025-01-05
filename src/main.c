@@ -67,10 +67,9 @@ restart:
                                 state = PLAY;
                                 // Activate main sprite and restore coordinates.
                                 oam_buf(OBJ(0),
-                                        ATTR0_4BPP | ATTR0_SQUARE,
-                                        ATTR1_SIZE_8x8,
+                                        ATTR0_Y(main_obj_y),
+                                        ATTR1_X(main_obj_x) | ATTR1_SIZE_16,
                                         ATTR2_ID(0) | ATTR2_PALBANK(0));
-                                oam_buf_coord(OBJ(0), main_obj_x, main_obj_y);
                                 vid_vsync();
                                 update_oam(OBJ(0));
 
@@ -84,22 +83,22 @@ restart:
                                         ATTR0_Y(50),
                                         ATTR1_SIZE_16 | ATTR1_VFLIP |
                                                 ATTR1_X(50),
-                                        ATTR2_ID(1) | ATTR2_PALBANK(1));
+                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
                                 oam_buf(OBJ(2),
                                         ATTR0_Y(50),
                                         ATTR1_SIZE_16 | ATTR1_VFLIP |
                                                 ATTR1_X(50),
-                                        ATTR2_ID(1) | ATTR2_PALBANK(1));
+                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
                                 oam_buf(OBJ(3),
                                         ATTR0_Y(50),
                                         ATTR1_SIZE_16 | ATTR1_VFLIP |
                                                 ATTR1_X(50),
-                                        ATTR2_ID(1) | ATTR2_PALBANK(1));
+                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
                                 oam_buf(OBJ(4),
                                         ATTR0_Y(50),
                                         ATTR1_SIZE_16 | ATTR1_VFLIP |
                                                 ATTR1_X(50),
-                                        ATTR2_ID(1) | ATTR2_PALBANK(1));
+                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
                                 // TODO: Copy all berry sprites to oam.
                                 // Maybe change update_oam() functionality to
                                 // take a range.
@@ -216,8 +215,7 @@ INLINE void init_bg_pal(void)
 INLINE void init_sprites(void)
 {
         // TODO:
-        //      (1) Make main sprite larger.
-        //	(2) Create thorn sprites.
+        //	(1) Create thorn sprites.
 
         // (1) Blank all sprites (they are active on startup).
         hide_sprites();
@@ -229,7 +227,7 @@ INLINE void init_sprites(void)
         // (3) Load sprite0 tiles into OVRAM.
         load_tiles4(CBB(4), TILE(0), (const TILE *)spriteTiles, spriteTilesLen);
         load_tiles4(
-                CBB(4), TILE(1), (const TILE *)berriesTiles, berriesTilesLen);
+                CBB(4), TILE(4), (const TILE *)berriesTiles, berriesTilesLen);
 
         // (4) Update the oam.
         vid_vsync();
@@ -319,15 +317,11 @@ INLINE s16 s16_to_u8(s16 x)
  */
 INLINE void move_element(SPRITE *sprite)
 {
-        // FIX: If sprite is along [240, 255], then it never gets moved.
-        //
         // (1) Get sprite bg coordinates.
-        // ysb = 245;
         s16 xsb = sprite->bg_coord.x;
         s16 ysb = sprite->bg_coord.y;
 
         // (2) Get bg coordinates.
-        // y = 230
         BG_POINT sc = bg_offset_buf[BG(0)];
         BG_POINT u8_sc = {
                 .x = s16_to_u8(sc.x),

@@ -3,13 +3,12 @@
 
 //======================================================================
 //
-//	sprite, 8x8@4,
+//	sprite, 16x16@4,
 //	+ palette 15 entries, not compressed
-//	+ 1 tiles not compressed
-//	+ regular map (flat), not compressed, 1x1
-//	Total size: 30 + 32 + 2 = 64
+//	+ 4 tiles Metatiled by 2x2 not compressed
+//	Total size: 30 + 128 = 158
 //
-//	Time-stamp: 2024-12-31, 19:40:41
+//	Time-stamp: 2025-01-04, 20:07:11
 //	Exported by Cearn's GBA Image Transmogrifier, v0.8.3
 //	( http://www.coranac.com/projects/#grit )
 //
@@ -19,10 +18,10 @@
 #define GRIT_SPRITE_H
 #include "types.h"
 
-#define spriteTilesLen 32
-extern const u16 spriteTiles[16];
+#define spriteTilesLen 128
+extern const u16 spriteTiles[64];
 
-#define spritePalLen 32
+#define spritePalLen 30
 extern const u16 spritePal[16];
 
 #endif // GRIT_SPRITE_H
