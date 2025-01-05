@@ -11,10 +11,22 @@
 #include "berries.h"
 #include "utils.h"
 
+INLINE void   show_menu(void);
+INLINE void   show_play(void);
+INLINE void   init_sprites(void);
+INLINE void   init_bg_pal(void);
+INLINE void   main_sprite_motion_buf(void);
+INLINE void   move_elements(void);
+INLINE POINT *rand_choose_coord(void);
+
 static ELEMENTS elements;
 
 static enum STATE { MENU = 0, PAUSE, PLAY, LOSE } state;
 static s32 main_obj_x, main_obj_y;
+
+#define N_BERRIES 4
+#define N_THORNS  0
+INLINE void init_berries(void);
 
 int NORETURN main(void)
 {
@@ -32,24 +44,9 @@ int NORETURN main(void)
         // =====================================================
 
         init_sprites();
-        SPRITE berry1 = {
-                .bg_coord = { 0, 0 },
-                  .attr = &oam_buffer[OBJ(1)]
-        };
-        SPRITE berry2 = {
-                .bg_coord = { 0, 240 },
-                  .attr = &oam_buffer[OBJ(2)]
-        };
-        SPRITE berry3 = {
-                .bg_coord = { 240, 0 },
-                  .attr = &oam_buffer[OBJ(3)]
-        };
-        SPRITE berry4 = {
-                .bg_coord = { 240, 240 },
-                  .attr = &oam_buffer[OBJ(4)]
-        };
 
 restart:
+        init_berries();
         main_obj_x = SPRITE_X_MID - 4;
         main_obj_y = SPRITE_Y_MID - 4;
         bg_offset_buf[BG(0)].x = 0;
@@ -128,10 +125,7 @@ restart:
 
                         // (2) Moves element according to screen positioning
                         // within bg.
-                        move_element(&berry1);
-                        move_element(&berry2);
-                        move_element(&berry3);
-                        move_element(&berry4);
+                        move_elements();
 
                         // (3) Vsync before copying into important areas.
                         vid_vsync();
@@ -374,9 +368,58 @@ INLINE void move_element(SPRITE *sprite)
 // contains berries and thorn arrays?
 INLINE void move_elements(void)
 {
-        for (u32 i = 0; i < elements.b_len; i++)
+        for (u32 i = 0; i < N_BERRIES; i++)
                 move_element(&elements.berries[i]);
 
-        for (u32 i = 0; i < elements.t_len; i++)
+        for (u32 i = 0; i < N_THORNS; i++)
                 move_element(&elements.thorns[i]);
+}
+
+// Coord table.
+// Must increase in 0x1 -> 0x3 -> 0x7 -> 0xF -> 0x1F -> ..
+static TABLE_ELEMENT coord_table[] = {
+        {     .pt = { 0, 0 }, .chosen = 0 },
+        {   .pt = { 16, 16 }, .chosen = 0 },
+        {   .pt = { 32, 32 }, .chosen = 0 },
+        {   .pt = { 48, 48 }, .chosen = 0 },
+        {   .pt = { 64, 64 }, .chosen = 0 },
+        {   .pt = { 80, 80 }, .chosen = 0 },
+        { .pt = { 100, 100 }, .chosen = 0 },
+};
+static u32 n_table_ele = sizeof(coord_table) / sizeof(coord_table[0]);
+
+// Rand functions
+static u32 seed = 1;
+static u32 custom_rand(void)
+{
+        // Linear Conguential Generator (LCG)
+        seed = 1664525 * seed + 1013904223;
+        return (seed >> 16) & 0x7FFF;
+}
+static u32    rand_index(void) { return custom_rand() & 0x7; }
+INLINE POINT *rand_choose_coord(void)
+{
+        TABLE_ELEMENT *ele = &coord_table[rand_index()];
+        for (;; ele = &coord_table[rand_index()])
+                if (!ele->chosen)
+                        break;
+        ele->chosen = 1;
+        return &ele->pt;
+}
+
+INLINE void init_berries(void)
+{
+        static SPRITE berries[N_BERRIES];
+        elements.berries = berries;
+
+        for (u32 i = 0; i < n_table_ele; i++)
+                coord_table[i].chosen = 0;
+
+        for (u32 i = 0; i < N_BERRIES; i++) {
+                POINT *pt = rand_choose_coord();
+                /*POINT *pt = &coord_table[i].pt;*/
+                berries[i].bg_coord.x = pt->x;
+                berries[i].bg_coord.y = pt->y;
+                berries[i].attr = &oam_buffer[OBJ(i + 1)];
+        }
 }
