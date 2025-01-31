@@ -24,7 +24,7 @@ static ELEMENTS elements;
 static enum STATE { MENU = 0, PAUSE, PLAY, LOSE } state;
 static s32 main_obj_x, main_obj_y;
 
-#define N_BERRIES 4
+#define N_BERRIES 10
 #define N_THORNS  0
 INLINE void init_berries(void);
 
@@ -76,34 +76,18 @@ restart:
                                 // attributes and background/screen coordinates.
                                 // The objects must start hidden then appear
                                 // after they move on screen.
-                                oam_buf(OBJ(1),
-                                        ATTR0_Y(50),
-                                        ATTR1_SIZE_16 | ATTR1_VFLIP |
-                                                ATTR1_X(50),
-                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
-                                oam_buf(OBJ(2),
-                                        ATTR0_Y(50),
-                                        ATTR1_SIZE_16 | ATTR1_VFLIP |
-                                                ATTR1_X(50),
-                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
-                                oam_buf(OBJ(3),
-                                        ATTR0_Y(50),
-                                        ATTR1_SIZE_16 | ATTR1_VFLIP |
-                                                ATTR1_X(50),
-                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
-                                oam_buf(OBJ(4),
-                                        ATTR0_Y(50),
-                                        ATTR1_SIZE_16 | ATTR1_VFLIP |
-                                                ATTR1_X(50),
-                                        ATTR2_ID(4) | ATTR2_PALBANK(1));
+                                for (u32 i = 0; i < N_BERRIES; i++)
+                                        oam_buf(OBJ(1 + i),
+                                                ATTR0_Y(50),
+                                                ATTR1_SIZE_16 | ATTR1_VFLIP |
+                                                        ATTR1_X(50),
+                                                ATTR2_ID(4) | ATTR2_PALBANK(1));
                                 // TODO: Copy all berry sprites to oam.
                                 // Maybe change update_oam() functionality to
                                 // take a range.
                                 vid_vsync();
-                                update_oam(OBJ(1));
-                                update_oam(OBJ(2));
-                                update_oam(OBJ(3));
-                                update_oam(OBJ(4));
+                                for (u32 i = 0; i < N_BERRIES; i++)
+                                        update_oam(OBJ(1 + i));
                                 show_play();
                         }
                         break;
@@ -131,11 +115,8 @@ restart:
                         vid_vsync();
 
                         // (4) Update sprite attributes for coordinates.
-                        update_oam(OBJ(0));
-                        update_oam(OBJ(1));
-                        update_oam(OBJ(2));
-                        update_oam(OBJ(3));
-                        update_oam(OBJ(4));
+                        for (u32 i = 0; i < 1 + N_BERRIES; i++)
+                                update_oam(OBJ(i));
 
                         // (5) Update background coordinates.
                         update_bg_offset(BG(0));
@@ -385,6 +366,14 @@ static TABLE_ELEMENT coord_table[] = {
         {   .pt = { 64, 64 }, .chosen = 0 },
         {   .pt = { 80, 80 }, .chosen = 0 },
         { .pt = { 100, 100 }, .chosen = 0 },
+        { .pt = { 120, 120 }, .chosen = 0 },
+        { .pt = { 140, 140 }, .chosen = 0 },
+        { .pt = { 160, 160 }, .chosen = 0 },
+        { .pt = { 200, 120 }, .chosen = 0 },
+        { .pt = { 220, 120 }, .chosen = 0 },
+        { .pt = { 160, 120 }, .chosen = 0 },
+        { .pt = { 180, 120 }, .chosen = 0 },
+        {  .pt = { 90, 120 }, .chosen = 0 },
 };
 static u32 n_table_ele = sizeof(coord_table) / sizeof(coord_table[0]);
 
@@ -396,7 +385,7 @@ static u32 custom_rand(void)
         seed = 1664525 * seed + 1013904223;
         return (seed >> 16) & 0x7FFF;
 }
-static u32    rand_index(void) { return custom_rand() & 0x7; }
+static u32    rand_index(void) { return custom_rand() & 0xF; }
 INLINE POINT *rand_choose_coord(void)
 {
         TABLE_ELEMENT *ele = &coord_table[rand_index()];
